@@ -21,7 +21,7 @@
 
 // top_fft.sv
 module top_fft(
-  input  logic        CLK100MHZ,   // constrain to N15 in urbana.xdc
+  input  logic        CLK100MHZ,   // constrain to N15 in .xdc
   input  logic        RESETn,      // active-low button (fill pin in XDC)
   output logic        UART_TX      // fill pin in XDC (USB-UART)
 );
@@ -35,7 +35,6 @@ module top_fft(
   logic rstn;
   always_ff @(posedge clk) rstn <= RESETn;
 
-  // --- BRAMs for real/imag (true dual-port) ---
   logic [A-1:0] a_addr, b_addr;
   logic         a_we, b_we;
   logic signed [W-1:0] a_din_r, a_din_i, a_dout_r, a_dout_i;
@@ -44,7 +43,6 @@ module top_fft(
 ram_dual #(.W(W), .A(A), .INIT_FILE("./data/stim256_re.mem")) ram_re (/* ports unchanged */);
 ram_dual #(.W(W), .A(A), .INIT_FILE("./data/stim256_im.mem")) ram_im (/* ports unchanged */);
 
-  // --- FFT engine (iterative DIT) ---
   logic start, busy, done;
   fft256_mem_core #(.W(W), .A(A)) u_fft (
     .clk(clk), .rstn(rstn), .start(start),
@@ -57,7 +55,6 @@ ram_dual #(.W(W), .A(A), .INIT_FILE("./data/stim256_im.mem")) ram_im (/* ports u
     .busy(busy), .done(done)
   );
 
-  // --- UART TX (115200 @ 100 MHz) ---
   logic        tx_busy, tx_send;
   logic [7:0]  tx_data;
   uart_tx #(.CLK_HZ(100_000_000), .BAUD(115200)) u_uart (
@@ -65,12 +62,10 @@ ram_dual #(.W(W), .A(A), .INIT_FILE("./data/stim256_im.mem")) ram_im (/* ports u
     .tx(UART_TX), .busy(tx_busy)
   );
 
-  // --- Readout FSM: dump "k,mag2_hex\\r\\n" for k=0..255 ---
   function automatic [7:0] hexchar(input [3:0] nib);
     hexchar = (nib < 10) ? (8'd48 + nib) : (8'd55 + nib); // 0-9,A-F
   endfunction
 
-  // simple 32-bit mag^2
   function automatic [31:0] mag2(input signed [W-1:0] xr, xi);
     mag2 = (xr * xr) + (xi * xi);
   endfunction
@@ -82,7 +77,6 @@ ram_dual #(.W(W), .A(A), .INIT_FILE("./data/stim256_im.mem")) ram_im (/* ports u
   logic [4:0]  out_idx;        // sequence over: "k,", 8 hex, "\r", "\n"
   logic [7:0]  out_byte;
 
-  // default FFT start once after reset
   logic started;
   always_ff @(posedge clk or negedge rstn) begin
     if(!rstn) begin started <= 1'b0; start <= 1'b0; end

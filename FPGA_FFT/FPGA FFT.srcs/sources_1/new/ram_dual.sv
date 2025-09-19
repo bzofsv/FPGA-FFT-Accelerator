@@ -21,7 +21,7 @@
 module ram_dual #(
   parameter int W = 16,
   parameter int A = 8,
-  parameter string INIT_FILE = ""    // <-- new
+  parameter string INIT_FILE = ""    
 )(
   input  logic                 clk,
   input  logic [A-1:0]         a_addr, input logic a_we,

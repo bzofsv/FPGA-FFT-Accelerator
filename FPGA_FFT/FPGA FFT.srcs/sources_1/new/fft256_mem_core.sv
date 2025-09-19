@@ -110,22 +110,14 @@ module fft256_mem_core #(
 
   state_t st;
 
-  // -----------------------------
-  // Combinational: derived values
-  // -----------------------------
   always_comb begin
     // m = 2^(s+1)
     m      = 9'(1) << (s + 1);
     half   = m[8:1];               // m / 2
     stride = N / m;                // N is power of two
-    // twiddle index = (j * stride) mod 128
     tw_addr = ( (j * stride) & 8'h7F );
   end
 
-  // -----------------------------
-  // Drive BRAM controls (registered)
-  // -----------------------------
-  // Defaults; we assign specific values per state below.
   always_ff @(posedge clk or negedge rstn) begin
     if (!rstn) begin
       ram_we_a   <= 1'b0;
@@ -160,9 +152,6 @@ module fft256_mem_core #(
     end
   end
 
-  // -----------------------------
-  // Main control / datapath regs
-  // -----------------------------
   always_ff @(posedge clk or negedge rstn) begin
     if (!rstn) begin
       st   <= IDLE;
@@ -189,7 +178,6 @@ module fft256_mem_core #(
         end
 
         ADDR: begin
-          // present addresses for a/b; BRAM will output next cycle
           st <= READ;
         end
 
